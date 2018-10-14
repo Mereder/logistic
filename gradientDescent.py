@@ -6,18 +6,17 @@ import pandas as pd
 
 def loadData():
     df = pd.read_excel('2014 and 2015 CSM dataset.xlsx')
-    dataSetDF = df[
-        ['Ratings', 'Genre', 'Budget', 'Screens', 'Sequel', 'Sentiment', 'Views', 'Likes', 'Dislikes', 'Comments',
-         'Aggregate Followers']]
-    dataSetDF = dataSetDF.fillna(dataSetDF.mean())
-    dataSetDF.insert(1, 'Ones', 1)
+    dataSetDF = df[['Ratings', 'Budget', 'Screens', 'Sequel']]
+    # 'Sentiment', 'Views', 'Likes', 'Dislikes', 'Comments',
+    dataSetDF = dataSetDF.dropna(how='any')
     cols = dataSetDF.shape[1]
     X = dataSetDF.iloc[:, 1:cols]
     y = dataSetDF.iloc[:, 0]
-    # dataSetArr = np.array(dataSetDF)  # np.ndarray()
-    # dataSet = dataSetArr.tolist()  # list
 
-    return X,y
+    X_norm = (X - X.min()) / (X.max() - X.min())
+    X_norm.insert(0, 'ones', 1)
+
+    return X_norm,y
 
 
 def computeCost(X, y, theta):
@@ -48,7 +47,6 @@ if __name__ == '__main__':
     # 来处理训练集和测试集
     x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
     # trainSet, testSet = train_test_split(dataSet, test_size=0.2)
-
     X = np.matrix(x_train.values)
     y = np.matrix(y_train.values)
     cols = X.shape[1]
@@ -64,11 +62,11 @@ if __name__ == '__main__':
 
     # 执行梯度下降算法
     g, cost = gradientDescent(X, y, theta, alpha, iters)
-
+    print(g)
     print(np.shape(x_test))
-    # result = sum(x_test[0]*g)
-    # print(result)
-    # print(y_test[0])
+    result = sum(x_test[0]*g)
+    print(result)
+    print(y_test[0])
 
     # print(result)
 

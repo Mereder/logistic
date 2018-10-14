@@ -1,24 +1,20 @@
-import xlrd
 
+import pandas as pd
 import numpy as np
 import random
 
 from sklearn.cross_validation import train_test_split
 
-
 def loadData():
-    excelRead = xlrd.open_workbook('2014 and 2015 CSM dataset.xlsx')
-    sheet = excelRead.sheet_by_name('Sheet1')
-
-    Ratings = sheet.col_values(2)
-    Ratings = Ratings[1:]  # 只取数据
-
-    dataSet = []
-    for i in range(sheet.nrows):
-        if i == 0 : continue
-        else:
-            dataSet.append(sheet.row_values(i))
-    return dataSet,Ratings
+    df = pd.read_excel('2014 and 2015 CSM dataset.xlsx')
+    dataSetDF = df[
+        ['Ratings', 'Budget', 'Screens', 'Sequel']
+    ]
+    # 'Aggregate Followers''Genre',  ,'Sentiment' 'Views', 'Likes', 'Dislikes', 'Comments'
+    dataSetDF = dataSetDF.fillna(dataSetDF.mean())
+    dataSetArr = np.array(dataSetDF)  # np.ndarray()
+    dataSet = dataSetArr.tolist()  # list
+    return dataSet
 
 def sigmoid(inX):
 	return 1.0 / (1 + np.exp(-inX))
@@ -38,7 +34,24 @@ def stocGradAscent1(dataMatrix, classLabels, numIter=150):
 	return weights
 
 
+def classifyVector(inX, weights):
+    prob = 10* sigmoid(sum(inX*weights))
+    return prob
+
 if __name__ == '__main__':
-    dataSet, Ratings = loadData()
-    trainSet, testSet = train_test_split(dataSet, test_size=0.2)  # 划分训练集和测试集
-    # 5-13 列 有效数据
+	dataSet = loadData() # 5-13 列 有效数据
+	trainSet, testSet = train_test_split(dataSet, test_size=0.2)
+	trainRatings = [];
+	testRatings = []
+	for data in trainSet:
+		trainRatings.append(data[0])
+		del (data[0])
+	for data in testSet:
+		testRatings.append(data[0])
+		del (data[0])
+	trainArr = np.array(trainSet)
+	trainRarr = np.array(trainRatings)
+	trainWeights = stocGradAscent1(trainArr, trainRarr, 100)
+	print(trainWeights)
+	print(classifyVector(np.array(testSet[0]), trainWeights))
+	print(testRatings[0])

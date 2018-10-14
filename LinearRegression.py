@@ -1,4 +1,3 @@
-import xlrd
 import numpy as np
 from sklearn.cross_validation import train_test_split
 import pandas as pd
@@ -6,13 +5,17 @@ import pandas as pd
 
 def loadData():
     df = pd.read_excel('2014 and 2015 CSM dataset.xlsx')
-    dataSetDF = df[
-        ['Ratings', 'Genre', 'Budget', 'Screens', 'Sequel', 'Sentiment', 'Views', 'Likes', 'Dislikes', 'Comments',
-         'Aggregate Followers']]
-    dataSetDF = dataSetDF.fillna(dataSetDF.mean())
-    dataSetArr = np.array(dataSetDF)  # np.ndarray()
-    dataSet = dataSetArr.tolist()  # list
-    return dataSet
+    dataSetDF = df[['Ratings', 'Budget', 'Screens', 'Sequel']]
+    # 'Sentiment', 'Views', 'Likes', 'Dislikes', 'Comments','Budget', 'Screens', 'Sequel'
+    dataSetDF = dataSetDF.dropna(how='any')
+    cols = dataSetDF.shape[1]
+    X = dataSetDF.iloc[:, 1:cols]
+    y = dataSetDF.iloc[:, 0]
+
+    X_norm = (X - X.min()) / (X.max() - X.min())
+    X_norm.insert(0, 'ones', 1)
+
+    return X_norm,y
 
 def standRegres(xArr, yArr):
     xMat = np.mat(xArr)
@@ -36,7 +39,7 @@ def batchGradientDescent(maxiter,x,y,theta,m):
 def computeCost(X, y, theta):
     inner = np.power(((X * theta.T) - y), 2)
     return np.sum(inner) / (2 * len(X))
-
+# 递归下降算法
 def gradientDescent(X, y, theta, alpha, iters):
     temp = np.matrix(np.zeros(theta.shape))
     parameters = int(theta.ravel().shape[1])
@@ -44,11 +47,9 @@ def gradientDescent(X, y, theta, alpha, iters):
 
     for i in range(iters):
         error = (X * theta.T) - y
-
         for j in range(parameters):
             term = np.multiply(error, X[:,j])
             temp[0,j] = theta[0,j] - ((alpha / len(X)) * np.sum(term))
-
         theta = temp
         cost[i] = computeCost(X, y, theta)
 
@@ -57,36 +58,25 @@ def gradientDescent(X, y, theta, alpha, iters):
 
 if __name__ == '__main__':
     # 去掉了前两列以及 Gross的数据
-    dataSet = loadData()
+    X,y= loadData()
     # 来处理训练集和测试集
-    trainSet, testSet = train_test_split(dataSet, test_size=0.2)
-    trainRatings = [];testRatings = []
-    for data in trainSet:
-        trainRatings.append(data[0])
-        del (data[0])
-    for data in testSet:
-        testRatings.append(data[0])
-        del (data[0])
-    trainArr = np.array(trainSet)
-    trainRarr = np.array(trainRatings)
+    x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
-    m,n = np.shape(trainArr)
-    theta = np.ones(n)
+    X = np.matrix(x_train.values)
+    y = np.matrix(y_train.values)
+    X_test = np.matrix(x_test.values)
+    y_test = np.matrix(y_test.values)
 
-    # result = batchGradientDescent(10000, trainArr, trainRarr, theta, 0.01)
-    g, cost = gradientDescent(trainArr, trainRarr, theta, 0.01, 1000)
-    print(g)
-
-    # print(result)
-
-
-    # w = standRegres(np.array(trainSet), np.array(trainRatings))
-    # print(type(w))
-    # num = len(testSet)
-    # cnt = 0.0
-    # for i in range(num):
-    #     result = np.mat(testSet[i])*w
-    #     if abs(result-testRatings[i])<= 1:
-    #         cnt += 1.0
-    # print(cnt/num)
+    w = standRegres(X, y)
+    # print(w)
+    cnt = 0.0
+    y_test = y_test.tolist()
+    num = len(y_test[0])
+    for i in range(num):
+        result = sum(X_test[i,:].dot(w))
+        print(result[0,0])
+        print(y_test[0][i])
+        if abs(result[0,0]-y_test[0][i]) <= 1:
+            cnt += 1.0
+    print(cnt/num)
 
